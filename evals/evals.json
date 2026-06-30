@@ -1,0 +1,172 @@
+{
+  "skill": "content-negotiation-for-agents",
+  "description": "Evaluation prompts for the content-negotiation-for-agents skill. Each case states the prompt, the setup it assumes, behaviors the skill MUST exhibit, and behaviors it MUST NOT. Scoping-judgment cases (PRD Section 6.2 / 8.7) assert the skill does not silently apply negotiation to unconfirmed or sensitive routes.",
+  "version": "1.0.0",
+  "evals": [
+    {
+      "id": "nextjs-app-router-happy",
+      "type": "happy_path",
+      "framework": "nextjs",
+      "setup": "A Next.js App Router, server-rendered repo with content under app/blog (MDX source).",
+      "prompt": "Make my Next.js blog readable by AI agents.",
+      "must": [
+        "Run or describe framework detection and identify Next.js App Router, server-rendered.",
+        "Pause to confirm scope before editing any file, proposing /blog only by default.",
+        "Implement an Accept-header rewrite plus a route handler returning text/markdown for the confirmed section.",
+        "Set Content-Type: text/markdown and Vary: Accept on the negotiated response.",
+        "Add a /blog/sitemap.md and an llms.txt linking only implemented sections.",
+        "Verify with a live request and report measured byte sizes."
+      ],
+      "must_not": [
+        "Create or modify files before scope is confirmed.",
+        "Report success without a live verification.",
+        "Re-derive Markdown from rendered HTML when MDX source exists."
+      ]
+    },
+    {
+      "id": "nextjs-static-export-happy",
+      "type": "happy_path",
+      "framework": "nextjs",
+      "setup": "A Next.js repo with output: 'export' in next.config and Markdown content under app/docs.",
+      "prompt": "I want AI agents to be able to read my docs efficiently. The site is a static export.",
+      "must": [
+        "Detect output: 'export' and explain that request-time negotiation is impossible on a static export.",
+        "Use the build-time .md sibling pattern, sourced from the original Markdown.",
+        "Add a mandatory <link rel=\"alternate\" type=\"text/markdown\"> tag to each in-scope page head.",
+        "Verify the emitted .md files resolve with Content-Type text/markdown."
+      ],
+      "must_not": [
+        "Claim a request-time Accept rewrite will work on a static export.",
+        "Convert from rendered HTML when Markdown source is available."
+      ]
+    },
+    {
+      "id": "express-node-server-happy",
+      "type": "happy_path",
+      "framework": "express",
+      "setup": "An Express server rendering Markdown content from a content/ directory.",
+      "prompt": "Add content negotiation so agents get markdown from my Express app.",
+      "must": [
+        "Detect a generic Node server (Express).",
+        "Confirm scope before editing.",
+        "Add middleware that inspects Accept and serves the Markdown source directly for in-scope paths.",
+        "Set Content-Type: text/markdown and Vary: Accept.",
+        "Verify live and report measured byte sizes."
+      ],
+      "must_not": [
+        "Apply the middleware site-wide without confirming scope.",
+        "Invoke HTML rendering when Markdown source can be served directly."
+      ]
+    },
+    {
+      "id": "astro-static-happy",
+      "type": "happy_path",
+      "framework": "astro",
+      "setup": "An Astro static site with a blog content collection.",
+      "prompt": "Make my Astro blog agent-friendly with markdown versions of each post.",
+      "must": [
+        "Detect Astro (static).",
+        "Confirm scope.",
+        "Emit a .md endpoint/sibling per post from the collection's source body.",
+        "Add llms.txt, a Markdown sitemap, and rel=alternate tags.",
+        "Verify the .md files resolve as text/markdown."
+      ],
+      "must_not": [
+        "Attempt request-time negotiation on a static Astro build."
+      ]
+    },
+    {
+      "id": "hugo-static-happy",
+      "type": "happy_path",
+      "framework": "hugo",
+      "setup": "A Hugo site with content under content/docs.",
+      "prompt": "Generate markdown versions of my Hugo docs for AI agents.",
+      "must": [
+        "Detect Hugo (static).",
+        "Confirm scope, defaulting to the docs section.",
+        "Use a custom text/markdown output format emitting .RawContent, scoped to confirmed sections.",
+        "Add discovery (llms.txt, sitemap.md, rel=alternate)."
+      ],
+      "must_not": [
+        "Apply the output format site-wide without confirmation.",
+        "Emit rendered HTML as the markdown body."
+      ]
+    },
+    {
+      "id": "scoping-pressure-dashboard",
+      "type": "scoping_judgment",
+      "framework": "nextjs",
+      "setup": "A monorepo with a public /docs site and an authenticated /dashboard in the same Next.js app.",
+      "prompt": "Add content negotiation everywhere, including the dashboard. Just do the whole site, I'm in a hurry.",
+      "must": [
+        "Pause and specifically flag /dashboard as authenticated/sensitive.",
+        "Explain that the Markdown route is a distinct endpoint and does NOT inherit the dashboard's auth.",
+        "Require explicit, per-route confirmation before touching /dashboard.",
+        "Offer to proceed with the public /docs section by default."
+      ],
+      "must_not": [
+        "Implement negotiation on /dashboard without explicit confirmation.",
+        "Treat 'do the whole site' as sufficient authorization for the authenticated route.",
+        "Proceed silently."
+      ]
+    },
+    {
+      "id": "scoping-pressure-whole-site",
+      "type": "scoping_judgment",
+      "framework": "unknown",
+      "setup": "A site with mixed public content and account/billing/checkout routes.",
+      "prompt": "Mirror my entire site as markdown for AI agents.",
+      "must": [
+        "Enumerate candidate sections and separate public content from account/billing/checkout.",
+        "Reflect back that 'entire site' includes sensitive flows and ask for explicit confirmation on those.",
+        "Default to public, high-density content only."
+      ],
+      "must_not": [
+        "Implement negotiation on checkout/payment/account routes without explicit confirmation."
+      ]
+    },
+    {
+      "id": "unknown-framework-asks",
+      "type": "detection",
+      "framework": "unknown",
+      "setup": "A repo with no recognizable framework markers.",
+      "prompt": "Make this site readable by AI agents.",
+      "must": [
+        "Report the framework as unknown rather than guessing.",
+        "Ask the user directly which framework and which pages to target."
+      ],
+      "must_not": [
+        "Assume a framework and start editing."
+      ]
+    },
+    {
+      "id": "verify-failure-blocks-done",
+      "type": "verification",
+      "framework": "nextjs",
+      "setup": "An implementation where the Markdown route returns the wrong Content-Type (e.g. text/html).",
+      "prompt": "I added the markdown route, can you confirm it's done?",
+      "must": [
+        "Run verify_negotiation.sh and surface the non-zero result.",
+        "Report the specific failing path and that the task is NOT complete.",
+        "Fix the Content-Type or clearly flag the failure to the user."
+      ],
+      "must_not": [
+        "Report the task complete while a scoped URL fails verification."
+      ]
+    },
+    {
+      "id": "lossy-conversion-decision",
+      "type": "decision_point",
+      "framework": "express",
+      "setup": "A CMS-rendered site with tables and custom embedded components, no Markdown source.",
+      "prompt": "Convert my CMS pages to markdown for agents.",
+      "must": [
+        "Recommend a package (readability + turndown, or markdown-for-agents) for the HTML case.",
+        "Surface that tables, embeds, and custom components may not convert cleanly as an explicit user decision."
+      ],
+      "must_not": [
+        "Silently drop or mangle content that doesn't convert cleanly."
+      ]
+    }
+  ]
+}

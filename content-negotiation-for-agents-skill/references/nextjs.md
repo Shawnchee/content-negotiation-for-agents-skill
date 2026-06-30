@@ -19,8 +19,15 @@ There are two viable mechanisms; pick one.
 ### Option A — config-level rewrite (PRD-default for App Router)
 
 A rewrite in `next.config` inspects the `Accept` header and, when it contains
-`text/markdown`, routes the request to a **parallel `_md` route tree** that
+`text/markdown`, routes the request to a **parallel `markdown` route tree** that
 returns Markdown. Browsers (which send `Accept: text/html,...`) are untouched.
+
+> **Gotcha (validated on Next.js 16.2.7):** do **not** name the parallel tree
+> with a leading underscore (e.g. `_md`). Next.js treats any folder whose name
+> starts with `_` as a **private folder** and excludes it from routing, so the
+> rewrite would resolve to a 404. Use a normal segment like `markdown`. Also, the
+> destination's param token must **match the source's** — `:path` → `:path`, not
+> `:path` → `:path*`.
 
 ```ts
 // next.config.ts
@@ -38,9 +45,11 @@ const nextConfig: NextConfig = {
             // Next matches this value as a regex against the Accept header.
             { type: 'header', key: 'accept', value: '(.*[ ,])?text/markdown.*' },
           ],
-          // Destination lives under a prefix the `source` never matches, so the
-          // rewrite cannot recursively re-trigger on its own output.
-          destination: '/_md/blog/:path*',
+          // Destination lives under a non-underscore prefix the `source` never
+          // matches, so the rewrite cannot recursively re-trigger on its output.
+          // (`markdown`, NOT `_md` — see the gotcha above. Param token matches
+          // the source: `:path`.)
+          destination: '/markdown/blog/:path',
         },
       ],
     }
@@ -55,7 +64,7 @@ authored as Markdown/MDX, **serve the source directly** — never re-render HTML
 and convert it back.
 
 ```ts
-// app/_md/blog/[...slug]/route.ts
+// app/markdown/blog/[...slug]/route.ts   (NOT app/_md/... — `_` = private folder)
 import { notFound } from 'next/navigation'
 import { getPostBySlug } from '@/lib/posts' // your existing content loader
 
@@ -82,6 +91,12 @@ export async function GET(
 }
 ```
 
+> **MDX-with-`export const meta`:** if you use `@next/mdx`, the `.mdx` source
+> isn't pure Markdown — it carries metadata as `export const meta = {...}` plus
+> possible `import`s. Strip those JS lines before returning, e.g.
+> `raw.replace(/export\s+const\s+meta\s*=\s*\{[\s\S]*?\};\s*/, '').replace(/^\s*(import|export)\s.*$/gm, '')`,
+> so the body is clean Markdown.
+
 ### Option B — middleware (cleaner when exclusions get complex)
 
 `middleware.ts` gives full programmatic control — useful when you need to exclude
@@ -102,7 +117,7 @@ export function middleware(req: NextRequest) {
 
   if (wantsMarkdown && !isDiscovery) {
     const url = req.nextUrl.clone()
-    url.pathname = `/_md${pathname}`
+    url.pathname = `/markdown${pathname}` // NOT `/_md` — `_` folders aren't routed
     return NextResponse.rewrite(url)
   }
   return NextResponse.next()
@@ -122,7 +137,7 @@ For the CMS case, if you obtain HTML by **internally re-fetching your own page**
 tag the internal request so negotiation does not recurse:
 
 ```ts
-// app/_md/blog/[...slug]/route.ts  (CMS variant)
+// app/markdown/blog/[...slug]/route.ts  (CMS variant; NOT _md — private folder)
 import { Readability } from '@mozilla/readability'
 import { JSDOM } from 'jsdom'
 import TurndownService from 'turndown'

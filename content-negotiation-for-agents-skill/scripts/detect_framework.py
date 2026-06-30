@@ -191,7 +191,7 @@ def detect_framework(repo, notes):
             "framework_family": "static-site",
             "router": None,
             "rendering_mode": detect_astro(repo, notes),
-            "recommended_reference": "references/astro-and-static-sites.md",
+            "recommended_reference": None,  # out of scope — this skill is Next.js-only
             "detected_dependencies": sorted(d for d in deps if d == "astro"),
         }
 
@@ -204,7 +204,7 @@ def detect_framework(repo, notes):
                 "framework_family": "node-server",
                 "router": None,
                 "rendering_mode": "server",
-                "recommended_reference": "references/express-fastify-hono.md",
+                "recommended_reference": None,  # out of scope — this skill is Next.js-only
                 "detected_dependencies": sorted(
                     d for d in deps if d in {"express", "fastify", "hono"}),
             }
@@ -224,7 +224,7 @@ def detect_framework(repo, notes):
                 "framework_family": "static-site",
                 "router": None,
                 "rendering_mode": "static",
-                "recommended_reference": "references/astro-and-static-sites.md",
+                "recommended_reference": None,  # out of scope — this skill is Next.js-only
                 "detected_dependencies": [dep],
             }
 
@@ -238,7 +238,7 @@ def detect_framework(repo, notes):
             "framework_family": "static-site",
             "router": None,
             "rendering_mode": "static",
-            "recommended_reference": "references/astro-and-static-sites.md",
+            "recommended_reference": None,  # out of scope — this skill is Next.js-only
             "detected_dependencies": [],
         }
 
@@ -253,7 +253,7 @@ def detect_framework(repo, notes):
             "framework_family": "static-site",
             "router": None,
             "rendering_mode": "static",
-            "recommended_reference": "references/astro-and-static-sites.md",
+            "recommended_reference": None,  # out of scope — this skill is Next.js-only
             "detected_dependencies": [],
         }
 
@@ -333,6 +333,14 @@ def main(argv):
 
     notes = []
     report = detect_framework(repo, notes)
+    # This skill is Next.js-only. The detector still identifies other frameworks
+    # so the skill can tell the user clearly that they're out of scope.
+    report["supported"] = report["framework"] == "nextjs"
+    if not report["supported"] and report["framework"] != "unknown":
+        notes.append(
+            "Detected '%s', which this Next.js-only skill does not support. Tell "
+            "the user content negotiation for %s is out of scope here."
+            % (report["framework"], report["framework"]))
     candidates, sensitive_hits = find_content_dirs(repo)
     report["candidate_content_dirs"] = candidates
     report["sensitive_dirs_flagged"] = sensitive_hits

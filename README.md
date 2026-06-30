@@ -102,25 +102,30 @@ Likely next: SvelteKit, Django, Rails.
 
 ## Repository layout
 
+The skill bundle (everything `npx skills add` copies) lives in a subfolder named
+after the skill, so its `references/` and `scripts/` install alongside `SKILL.md`.
+Repo-level files (README, LICENSE, CI) stay at the root.
+
 ```
-content-negotiation-for-agents-skill/
-├── SKILL.md                     # the skill (loaded by the agent)
-├── README.md                    # this file
-├── LICENSE                      # MIT
-├── references/                  # loaded on demand by the skill
-│   ├── nextjs.md
-│   ├── express-fastify-hono.md
-│   ├── astro-and-static-sites.md
-│   ├── packages-comparison.md   # living snapshot — verify before recommending
-│   └── llms-txt-and-sitemaps.md
-├── scripts/
-│   ├── detect_framework.py      # Step 1 — read-only, stdlib only
-│   ├── verify_negotiation.sh    # Step 6 — curl + POSIX shell only
-│   └── validate_skill.py        # contributor/CI validator
-├── evals/
-│   └── evals.json               # happy-path + scoping-judgment test prompts
-└── .github/workflows/
-    └── validate-skill.yml       # CI: validate + JSON + shell syntax checks
+content-negotiation-for-agents-skill/        # repo root
+├── README.md                                # this file
+├── LICENSE                                  # MIT
+├── .github/workflows/
+│   └── validate-skill.yml                   # CI: validate + JSON + shell syntax checks
+└── content-negotiation-for-agents-skill/    # the installable skill bundle
+    ├── SKILL.md                             # the skill (loaded by the agent)
+    ├── references/                          # loaded on demand by the skill
+    │   ├── nextjs.md
+    │   ├── express-fastify-hono.md
+    │   ├── astro-and-static-sites.md
+    │   ├── packages-comparison.md           # living snapshot — verify before recommending
+    │   └── llms-txt-and-sitemaps.md
+    ├── scripts/
+    │   ├── detect_framework.py              # Step 1 — read-only, stdlib only
+    │   ├── verify_negotiation.sh            # Step 6 — curl + POSIX shell only
+    │   └── validate_skill.py                # contributor/CI validator
+    └── evals/
+        └── evals.json                       # happy-path + scoping-judgment test prompts
 ```
 
 ## Cross-agent portability

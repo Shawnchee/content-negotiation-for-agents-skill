@@ -8,6 +8,11 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        # The skill (SKILL.md + references/ + scripts/ + evals/) lives in this
+        # subfolder so `npx skills add` copies the whole bundle. Run steps here.
+        working-directory: content-negotiation-for-agents-skill
     steps:
       - name: Check out repository
         uses: actions/checkout@v4

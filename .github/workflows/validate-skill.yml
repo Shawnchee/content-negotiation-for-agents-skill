@@ -1,0 +1,50 @@
+name: validate-skill
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Validate SKILL.md structure (frontmatter, name, description, orphaned references)
+        run: python3 scripts/validate_skill.py .
+
+      - name: Check evals/evals.json is well-formed JSON
+        run: python3 -c "import json,sys; json.load(open('evals/evals.json')); print('evals.json is valid JSON')"
+
+      - name: Syntax-check bundled shell scripts
+        run: |
+          set -e
+          for f in scripts/*.sh; do
+            echo "sh -n $f"
+            sh -n "$f"
+          done
+
+      - name: Syntax-check bundled Python scripts
+        run: |
+          set -e
+          for f in scripts/*.py; do
+            echo "py_compile $f"
+            python3 -m py_compile "$f"
+          done
+
+      - name: Smoke-test the detector against a fixture (must not crash, must emit JSON)
+        run: |
+          set -e
+          mkdir -p /tmp/fixture/app/blog
+          printf '{"dependencies":{"next":"15.0.0","react":"18.0.0"}}' > /tmp/fixture/package.json
+          printf '# Hello\n' > /tmp/fixture/app/blog/post.md
+          out="$(python3 scripts/detect_framework.py /tmp/fixture)"
+          echo "$out"
+          echo "$out" | python3 -c "import json,sys; d=json.load(sys.stdin); assert d['framework']=='nextjs', d; assert d['router']=='app', d; print('detector OK')"

@@ -236,8 +236,8 @@ for (const post of await getAllPosts()) {
 Because static export cannot negotiate, the `<link rel="alternate"
 type="text/markdown" href="/blog/<slug>.md">` tag in each page's `<head>` is
 **mandatory** here, not optional — it is the only discovery path. See
-`references/astro-and-static-sites.md` for the shared static-site pattern and
-`references/llms-txt-and-sitemaps.md` for the tag and `llms.txt`.
+`references/llms-txt-and-sitemaps.md` for the tag, the Markdown sitemap, and
+`llms.txt`.
 
 ---
 

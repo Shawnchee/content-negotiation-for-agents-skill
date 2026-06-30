@@ -49,18 +49,15 @@ Always present both options and let the user (or the default above) decide.
 
 | Package | Ecosystem | What it automates | Snapshot status | Notes |
 |---|---|---|---|---|
-| **markdown-for-agents** + scoped `@markdown-for-agents/express`, `/fastify`, `/hono`, `/nextjs`, `/web` | Express, Fastify, Hono, Next.js, Web-standard (Workers/Deno/Bun) | Inspects `Accept`; on `text/markdown` converts the response to Markdown, strips nav/footer/ads/cookie banners, sets `Content-Type: text/markdown` + `Vary: Accept`; browsers pass through | v1.3.4 (2026-03-30) | **Emerging / low-adoption** — solo project, ~23★, tiny download counts. Does exactly what this skill describes, but flag it as early-stage, not a default. NOTE: `@markdown-for-agents/core` does **not** exist — only the umbrella + per-framework scoped packages. |
-| **@mdream/nuxt** | Nuxt | Nuxt module doing Accept-header negotiation (HTML↔Markdown via mdream) | v1.4.1 (2026-06-16), part of the 914★ mdream project | Active. Nuxt-only. (Nuxt is outside the v1 framework set but listed for completeness.) |
+| **@markdown-for-agents/nextjs** (part of the `markdown-for-agents` family) | Next.js | Inspects `Accept`; on `text/markdown` converts the response to Markdown, strips nav/footer/ads/cookie banners, sets `Content-Type: text/markdown` + `Vary: Accept`; browsers pass through | v1.3.4 (2026-03-30) | **Emerging / low-adoption** — solo project, ~23★, tiny download counts. Does exactly what this skill describes, but flag it as early-stage, not a default. NOTE: `@markdown-for-agents/core` does **not** exist — only the umbrella + per-framework scoped packages. |
 
 ---
 
-## Build-time `llms.txt` / `.md` sibling generators (static sites & docs frameworks)
+## Build-time `llms.txt` / `.md` sibling generators (Next.js)
 
 | Package | Ecosystem | What it automates | Snapshot status | Notes |
 |---|---|---|---|---|
-| **starlight-llms-txt** | Astro Starlight | Generates `llms.txt`, `llms-full.txt`, `llms-small.txt` from Starlight docs at build | v0.10.0 (2026-05-14), ~31k dl/wk | **Most credible in this category.** By a Starlight core maintainer. Starlight-specific. |
-| **fumadocs** (`fumadocs-core`, `fumadocs-mdx`) | Next.js docs framework | Built-in `llms()` source helper + `getLLMText`; documented `llms.txt`/`llms-full.txt`, raw `.mdx` serving, and Accept-header negotiation | core v16.10.7 (2026-06-29), ~755k dl/wk | Very active. The llms.txt support is a **feature of the framework**, not a separate package. |
-| **astro-llms-md** | Astro | Generates `llms.txt`, `llms-full.txt`, and per-page `.md` files; zero-config | v2.2.2 (2026-06-23) | Active but young / low adoption. |
+| **fumadocs** (`fumadocs-core`, `fumadocs-mdx`) | Next.js docs framework | Built-in `llms()` source helper + `getLLMText`; documented `llms.txt`/`llms-full.txt`, raw `.mdx` serving, and Accept-header negotiation | core v16.10.7 (2026-06-29), ~755k dl/wk | Very active. The llms.txt support is a **feature of the framework**, not a separate package. If the project already uses Fumadocs, prefer its built-in support. |
 | **next-llms-txt** | Next.js (16+) | Proxy plugin that generates `llms.txt` | v1.0.2 (2025-12-03) | Real, new, small. |
 | **nextra** | Next.js | MDX site generator; serves raw Markdown to agents via Next config rewrites + header matching; ships a docs `llms.txt` | v4.6.1 (2025-12-04) | Active, large. The MD-serving is a config rewrite, not a dedicated API. |
 
@@ -85,21 +82,19 @@ on 2026-06-30. Don't recommend them:
 - bare `llms-txt`, `generate-llms-txt` — not found on npm.
 - `@vercel/llms-txt`, `@vercel/agent`, `@vercel/markdown`,
   `@vercel/content-negotiation`, `next-content-negotiation` — no such packages.
-- `astro-llms-txt` (codiume/orbit) — only a stale `0.0.1-beta` (2025-02);
-  prefer `starlight-llms-txt` / `astro-llms-md` instead.
 - `showdown` — exists but converts **Markdown→HTML** (wrong direction).
 
 ---
 
 ## Honest default read
 
-For a production build, the battle-tested pieces are **@mozilla/readability →
-turndown** (extract, then convert) for the CMS/HTML case, and
-**starlight-llms-txt** or **fumadocs**' built-in support on the docs-framework
-side. The dedicated Accept-negotiation packages (`markdown-for-agents`,
-`@mdream/nuxt`) do exactly what this skill is about but are early-stage as of the
-snapshot — list them as "purpose-built, emerging," not as defaults. When the
-content is already Markdown, no package beats just serving the source.
+For a Next.js production build, the battle-tested pieces are **@mozilla/readability
+→ turndown** (extract, then convert) for the CMS/HTML case, and **fumadocs**'
+built-in support if the project is already a Fumadocs site. The dedicated
+Accept-negotiation package (`@markdown-for-agents/nextjs`) does exactly what this
+skill is about but is early-stage as of the snapshot — list it as "purpose-built,
+emerging," not a default. When the content is already Markdown/MDX, no package
+beats just serving the source via the hand-rolled rewrite in `references/nextjs.md`.
 
 *Open question for maintainers (PRD §14.1): whether to add a periodic CI job that
 checks each listed package's latest release date. v1 relies on the

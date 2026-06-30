@@ -1,13 +1,19 @@
-# content-negotiation-for-agents
+# content-negotiation-for-agents-skill
 
-An [Agent Skill](https://agentskills.io) that takes you from *"I want AI agents
-to read my site efficiently"* to a working, **verified** implementation of HTTP
-**content negotiation** — serving clean Markdown to agents via the `Accept`
-header, while browsers keep getting normal HTML from the **same URL**.
+An [Agent Skill](https://agentskills.io) for **Next.js** that takes you from
+*"I want AI agents to read my site efficiently"* to a working, **verified**
+implementation of HTTP **content negotiation** — serving clean Markdown to agents
+via the `Accept` header, while browsers keep getting normal HTML from the **same
+URL**.
 
 A negotiated Markdown page drops the nav, scripts, styles, and cookie banners an
 agent never wanted, so it costs a fraction of the context and tokens of the
-equivalent HTML page.
+equivalent HTML page. On a real Next.js 16 app this skill measured a page going
+from 42 KB of HTML to 649 bytes of Markdown — **98.5% smaller**.
+
+> **Status:** the Next.js App Router pattern is validated end-to-end against
+> Next.js 16.2.7. This skill is **Next.js-only** (App Router + static export) — if
+> your project is another framework it will tell you, rather than guess.
 
 > **What it touches, before you install it sight-unseen:** this skill **never**
 > edits a route you didn't explicitly confirm. It detects your project read-only,
@@ -17,12 +23,13 @@ equivalent HTML page.
 
 ## What it does
 
-- Detects your framework (Next.js, Express/Fastify/Hono, Astro/Hugo/Jekyll) and
-  your content sections — **read-only**.
+- Confirms the project is **Next.js** (App Router or static export) and finds your
+  content sections — **read-only**.
 - Asks which pages to target, and pushes back if you ask for authenticated or
   whole-site scope.
-- Implements negotiation the right way for your framework (request-time rewrite,
-  middleware, or build-time `.md` siblings).
+- Implements negotiation the Next.js way: a request-time `Accept`-header rewrite to
+  a Markdown route handler (server-rendered), or build-time `.md` siblings (static
+  export).
 - Adds discovery: `llms.txt`, per-section Markdown sitemaps, and
   `<link rel="alternate" type="text/markdown">` tags.
 - Verifies every scoped URL with a real request and reports **measured** byte
@@ -30,6 +37,8 @@ equivalent HTML page.
 
 ## What it does NOT do
 
+- **It is Next.js-only.** For Express/Fastify/Hono or Astro/Hugo/Jekyll it reports
+  the framework and stops rather than guessing at an unvalidated pattern.
 - It does not touch authenticated/dashboard/checkout routes without explicit,
   per-route confirmation.
 - It is not a "make my whole site AI-optimized" tool. `robots.txt` for AI
@@ -89,16 +98,16 @@ anyone who sends `Accept: text/markdown`. So Step 2 is non-skippable: the skill
 defaults to public content and requires explicit, per-route confirmation for
 anything flagged sensitive — even if you say "just do the whole site."
 
-## Supported frameworks (v1)
+## Supported
 
-| Framework | Pattern |
-|---|---|
-| Next.js — App Router, server-rendered | `Accept`-header rewrite → Markdown route handler |
-| Next.js — static export (`output: 'export'`) | Build-time `.md` siblings + `rel=alternate` |
-| Express / Fastify / Hono / generic Node | Middleware on `Accept` |
-| Astro / Hugo / Jekyll / static generators | Build-time `.md` siblings + `rel=alternate` |
+| Target | Pattern | Status |
+|---|---|---|
+| Next.js — App Router, server-rendered | `Accept`-header rewrite → Markdown route handler | **validated** on Next.js 16.2.7 |
+| Next.js — static export (`output: 'export'`) | Build-time `.md` siblings + `rel=alternate` | documented |
 
-Likely next: SvelteKit, Django, Rails.
+Other frameworks (Express/Fastify/Hono, Astro/Hugo/Jekyll) are intentionally out
+of scope — this skill stays focused on doing Next.js correctly rather than
+covering many frameworks shallowly.
 
 ## Repository layout
 
@@ -115,9 +124,7 @@ content-negotiation-for-agents-skill/        # repo root
 └── content-negotiation-for-agents-skill/    # the installable skill bundle
     ├── SKILL.md                             # the skill (loaded by the agent)
     ├── references/                          # loaded on demand by the skill
-    │   ├── nextjs.md
-    │   ├── express-fastify-hono.md
-    │   ├── astro-and-static-sites.md
+    │   ├── nextjs.md                        # the Next.js guide (validated)
     │   ├── packages-comparison.md           # living snapshot — verify before recommending
     │   └── llms-txt-and-sitemaps.md
     ├── scripts/
@@ -130,9 +137,11 @@ content-negotiation-for-agents-skill/        # repo root
 
 ## Cross-agent portability
 
-Written and tested against **Claude Code** and **Codex CLI**. The frontmatter
-uses only standard fields (`name`, `description`, `license`, `compatibility`,
-`metadata`) so it degrades gracefully on any conformant agent. Bundled tooling
+Validated in **Claude Code**; written to the open standard so it also works in
+**Codex CLI** and other conformant agents (Codex not yet runtime-tested). The
+frontmatter uses only standard fields (`name`, `description`, `license`,
+`compatibility`, `metadata`) so it degrades gracefully on any conformant agent.
+Bundled tooling
 uses only the Python standard library and POSIX `curl`/shell — installing the
 skill pulls in no dependency tree of its own.
 
